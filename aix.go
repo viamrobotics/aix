@@ -15,7 +15,7 @@ import (
 
 	"golang.org/x/sys/unix"
 
-	"github.com/AppImageCrafters/libzsync-go"
+	"github.com/Otterverse/libzsync-go"
 	"github.com/jessevdk/go-flags"
 	"github.com/schollz/progressbar/v3"
 )
@@ -45,10 +45,12 @@ func main() {
 		panic(err)
 	}
 
+	var b bytes.Buffer
+	p.WriteHelp(&b)
+	helpString := b.String()
+
 	if opts.Help {
-		var b bytes.Buffer
-		p.WriteHelp(&b)
-		fmt.Println(b.String())
+		fmt.Println(helpString)
 		os.Exit(1)
 	}
 
@@ -86,17 +88,8 @@ func main() {
 			}
 		}
 
-		shaSum, err := GetSHA1(opts.UpdateFile)
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Println("Update: ", opts.Update)
-		fmt.Println("AutoUpdate: ", opts.AutoUpdate)
-		fmt.Println("URL: ", opts.UpdateURL)
-		fmt.Println("File: ", opts.UpdateFile)
-		fmt.Println("SHA1: ", shaSum)
-
+		fmt.Println("UpdateURL: ", opts.UpdateURL)
+		fmt.Println("UpdateFile: ", opts.UpdateFile)
 		updated, err := doUpdate(opts.UpdateFile, opts.UpdateURL)
 		if err != nil {
 			fmt.Println("Error during update: ", err)
@@ -104,30 +97,40 @@ func main() {
 		}
 		if updated {
 			fmt.Println("Successfully updated.")
-			if opts.AutoUpdate {
-				// Clean environment
-				os.Unsetenv("AIX_TARGET")
-
-				// Exec the newly updated AppImage
-				opts.Target = opts.UpdateFile
-			}
 		} else {
 			fmt.Println("No update needed.")
 		}
+
+		if opts.AutoUpdate && updated {
+			// Clean environment
+			os.Unsetenv("AIX_TARGET")
+			// Exec the newly updated AppImage
+			opts.Target = opts.UpdateFile
+		}
+
+		if !opts.AutoUpdate {
+			os.Exit(0)
+		}
+
+	}
+
+	if opts.Target == "" {
+		fmt.Println("Error: no exectuable target set!")
+		fmt.Println(helpString)
+		os.Exit(1)
+	}
+
+	err = unix.Access(opts.Target, unix.X_OK)
+	if err != nil {
+		panic(fmt.Errorf("Can't execute target '%s': %s", opts.Target, err))
 	}
 
 	// Special env set within AppImage runtimes
 	selfName := os.Getenv("ARGV0")
 	if selfName == "" {
-		// Fallback to normal ARGV0
+		// Fallback to normal ARGV[0]
 		selfName = os.Args[0]
 	}
-
-	err = unix.Access(opts.Target, unix.X_OK)
-	if err != nil {
-		panic(fmt.Errorf("Target (%s) isn't executable", opts.Target))
-	}
-
 	env := os.Environ()
 
 	newArgs := []string{selfName}
@@ -200,6 +203,7 @@ func doUpdate(filePath string, url string) (bool, error) {
 		return false, err
 	}
 	defer os.Remove(tmpFile.Name())
+	defer tmpFile.Close()
 
 	bar := progressbar.DefaultBytes(zs.RemoteFileSize, "Updating")
 	err = zs.Sync(filePath, &progressMultiWriter{bar, tmpFile})
