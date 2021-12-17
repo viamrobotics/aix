@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"strings"
 	"syscall"
 
@@ -28,7 +29,7 @@ func main() {
 		Update     bool   `long:"aix-update" description:"Update and exit"`
 		AutoUpdate bool   `long:"aix-auto-update" description:"Update and run main app from new version"`
 		UpdateURL  string `long:"aix-update-url" description:"Force ZSync (source) URL"`
-		UpdateFile string `long:"aix-update-file" description:"Force local AppImage (destination) file path for update" env:"APPIMG"`
+		UpdateFile string `long:"aix-update-file" description:"Force local AppImage (destination) file path for update" env:"APPIMAGE"`
 		Target     string `long:"aix-target" description:"Run internal tool/script (instead of main application)" env:"AIX_TARGET"`
 		Install    bool   `long:"aix-install" description:"Shortcut for --aix-target=aix.d/install"`
 		Help       bool   `long:"aix-help" description:"Show this help message"`
@@ -198,7 +199,7 @@ func doUpdate(filePath string, url string) (bool, error) {
 		return false, nil
 	}
 
-	tmpFile, err := ioutil.TempFile("", "aix-update-temp.")
+	tmpFile, err := ioutil.TempFile(path.Dir(filePath), "aix-update-temp.")
 	if err != nil {
 		return false, err
 	}
