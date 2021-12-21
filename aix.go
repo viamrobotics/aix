@@ -126,15 +126,8 @@ func main() {
 		panic(fmt.Errorf("Can't execute target '%s': %s", opts.Target, err))
 	}
 
-	// Special env set within AppImage runtimes
-	selfName := os.Getenv("ARGV0")
-	if selfName == "" {
-		// Fallback to normal ARGV[0]
-		selfName = os.Args[0]
-	}
 	env := os.Environ()
-
-	newArgs := []string{selfName}
+	newArgs := []string{opts.Target}
 	newArgs = append(newArgs, args...)
 
 	// We are completely replacing ourselves with the new app
