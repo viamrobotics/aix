@@ -201,10 +201,10 @@ func doUpdate(filePath string, url string) (bool, error) {
 
 	bar := progressbar.DefaultBytes(zs.RemoteFileSize, "Updating")
 	err = zs.Sync(filePath, &progressMultiWriter{bar, tmpFile})
+	bar.Finish()
 	if err != nil {
 		return false, err
 	}
-	bar.Finish()
 
 	shaSum, err = GetSHA1(filePath)
 	if err != nil {
