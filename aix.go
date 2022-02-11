@@ -9,10 +9,14 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
+	"os/signal"
 	"path"
 	"strings"
+	"sync"
 	"syscall"
+	"time"
 
 	"golang.org/x/sys/unix"
 
@@ -28,6 +32,7 @@ func main() {
 	var opts struct {
 		Update     bool   `long:"aix-update" description:"Update and exit"`
 		AutoUpdate bool   `long:"aix-auto-update" description:"Update and run main app from new version"`
+		UseZSync   bool   `long:"aix-use-zsync" description:"Use zSync for update (slow, but bandwidth efficient)"`
 		UpdateURL  string `long:"aix-update-url" description:"Force ZSync (source) URL"`
 		UpdateFile string `long:"aix-update-file" description:"Force local AppImage (destination) file path for update" env:"APPIMAGE"`
 		Target     string `long:"aix-target" description:"Run internal tool/script (instead of main application)" env:"AIX_TARGET"`
@@ -91,7 +96,7 @@ func main() {
 
 		fmt.Println("UpdateURL: ", opts.UpdateURL)
 		fmt.Println("UpdateFile: ", opts.UpdateFile)
-		updated, err := doUpdate(opts.UpdateFile, opts.UpdateURL)
+		updated, err := doUpdate(opts.UpdateFile, opts.UpdateURL, opts.UseZSync)
 		if err != nil {
 			fmt.Println("Error during update: ", err)
 			os.Exit(1)
@@ -172,7 +177,7 @@ func GetURLFromImage(filePath string) (string, error) {
 	return strings.Trim(url, "\x00"), nil
 }
 
-func doUpdate(filePath string, url string) (bool, error) {
+func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 	err := unix.Access(filePath, unix.W_OK|unix.R_OK)
 	if err != nil {
 		return false, fmt.Errorf("Need read/write access to update file. Try running with sudo.")
@@ -199,8 +204,44 @@ func doUpdate(filePath string, url string) (bool, error) {
 	defer os.Remove(tmpFile.Name())
 	defer tmpFile.Close()
 
-	bar := progressbar.DefaultBytes(zs.RemoteFileSize, "Updating")
-	err = zs.Sync(filePath, &progressMultiWriter{bar, tmpFile})
+	// Systemd and other loggers don't handle the progress bar well
+	shellPrompt := os.Getenv("TERM")
+	var interactive bool
+	if shellPrompt != "" {
+		interactive = true
+	}
+
+	var bar *progressbar.ProgressBar
+	var workers sync.WaitGroup
+	if interactive {
+		bar = progressbar.DefaultBytes(zs.RemoteFileSize, "Updating")
+	} else {
+		// If not in a shell, only print a few lines
+		bar = progressbar.DefaultBytesSilent(zs.RemoteFileSize, "Updating")
+		workers.Add(1)
+		defer workers.Wait()
+		go func() {
+			defer workers.Done()
+			for {
+				state := bar.State()
+				fmt.Printf(
+					"Updating...  %.2f%% done | %d/%d bytes\n",
+					state.CurrentPercent*100,
+					int(state.CurrentBytes),
+					int(zs.RemoteFileSize),
+				)
+				if state.CurrentPercent >= 1.0 {
+					break
+				}
+				time.Sleep(time.Second)
+			}
+		}()
+	}
+	if useZSync {
+		err = zs.Sync(filePath, &progressMultiWriter{bar, tmpFile})
+	} else {
+		err = downloadFile(zs.RemoteFileUrl, &progressMultiWriter{bar, tmpFile})
+	}
 	bar.Finish()
 	if err != nil {
 		return false, err
@@ -223,6 +264,10 @@ func doUpdate(filePath string, url string) (bool, error) {
 	uid := int(fileInfo.Sys().(*syscall.Stat_t).Uid)
 	gid := int(fileInfo.Sys().(*syscall.Stat_t).Gid)
 
+	// Real update starts, so don't let this interrupt in an ugly way
+	signal.Ignore(syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	defer signal.Reset(syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
 	err = os.Rename(tmpFile.Name(), filePath)
 	if err != nil {
 		return false, err
@@ -239,6 +284,16 @@ func doUpdate(filePath string, url string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func downloadFile(url string, file io.Writer) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	_, err = io.Copy(file, resp.Body)
+	return err
 }
 
 // Simple io.WriteSeeker type for progress bar
