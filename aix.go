@@ -24,9 +24,11 @@ import (
 	"github.com/Otterverse/libzsync-go"
 	"github.com/jessevdk/go-flags"
 	"github.com/schollz/progressbar/v3"
+	"github.com/alessio/shellescape"
 )
 
 func main() {
+
 	// Set automatically inside AppImage runtimes
 	appDir := os.Getenv("APPDIR")
 
@@ -143,7 +145,12 @@ func main() {
 			os.Setenv("AIX_POST_UPDATE", "1")
 
 			// Exec the newly updated AppImage
-			opts.Target = opts.UpdateFile
+			cmd := shellescape.QuoteCommand(args)
+			fmt.Printf("SMURF: (%s)\n", cmd)
+			env := os.Environ()
+			newArgs := []string{"bash", "-c", cmd}
+			panic(syscall.Exec(opts.Target, newArgs, env))
+
 		} else if err == nil {
 			fmt.Println("No update needed.")
 			if !opts.AutoUpdate {

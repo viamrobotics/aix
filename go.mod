@@ -10,6 +10,7 @@ require (
 )
 
 require (
+	github.com/alessio/shellescape v1.4.1 // indirect
 	github.com/glycerine/rbuf v0.0.0-20190314090850-75b78581bebe // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
