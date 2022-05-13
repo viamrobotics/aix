@@ -80,7 +80,8 @@ func main() {
 			if err != nil {
 				fmt.Printf("Postupdate run failed: %s\n", out)
 				fmt.Println(err)
-				os.Exit(0)			}
+				panic(err) //os.Exit(0)
+			}
 			fmt.Printf("Postupdate run complete: %s\n", out)
 		}
 		os.Unsetenv("AIX_POST_UPDATE")
