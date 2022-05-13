@@ -26,6 +26,11 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
+func fatal(err error) {
+	fmt.Println(err)
+	os.Exit(1)
+}
+
 func main() {
 	// Set automatically inside AppImage runtimes
 	appDir := os.Getenv("APPDIR")
@@ -50,7 +55,7 @@ func main() {
 
 	args, err := p.Parse()
 	if err != nil {
-		panic(err)
+		fatal(err)
 	}
 
 	var b bytes.Buffer
@@ -68,12 +73,12 @@ func main() {
 		if errors.Is(err, os.ErrNotExist) {
 			fmt.Println("No postupdate needed")
 		} else if err != nil {
-			panic(err)
+			fatal(err)
 		} else {
 			out, err := exec.Command(cmd).Output()
 			if err != nil {
 				fmt.Printf("Postupdate run failed: %s\n", out)
-				panic(err)
+				fatal(err)
 			}
 			fmt.Printf("Postupdate run complete: %s\n", out)
 		}
@@ -95,7 +100,7 @@ func main() {
 			fmt.Println("No install target executable (aix.d/install) found!")
 			os.Exit(1)
 		} else if err != nil {
-			panic(err)
+			fatal(err)
 		}
 		opts.Target = "aix.d/install"
 	}
@@ -106,14 +111,14 @@ func main() {
 
 	if opts.Update {
 		if opts.UpdateFile == "" {
-			panic("No AppImage file to update!")
+			fatal(errors.New("No AppImage file to update!"))
 		}
 
 		if opts.UpdateURL == "" {
 			var err error
 			opts.UpdateURL, err = GetURLFromImage(opts.UpdateFile)
 			if err != nil {
-				panic(err)
+				fatal(err)
 			}
 		}
 
@@ -153,7 +158,7 @@ func main() {
 
 	err = unix.Access(opts.Target, unix.X_OK)
 	if err != nil {
-		panic(fmt.Errorf("Can't execute target '%s': %s", opts.Target, err))
+		fatal(fmt.Errorf("Can't execute target '%s': %s", opts.Target, err))
 	}
 
 	env := os.Environ()
