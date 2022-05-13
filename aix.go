@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path"
 	"strings"
@@ -31,12 +32,13 @@ func main() {
 
 	var opts struct {
 		Update     bool   `long:"aix-update" description:"Update and exit"`
-		AutoUpdate bool   `long:"aix-auto-update" description:"Update and run main app from new version"`
+		AutoUpdate bool   `long:"aix-auto-update" description:"Update and run main app from new version" env:"AIX_AUTO_UPDATE"`
 		UseZSync   bool   `long:"aix-use-zsync" description:"Use zSync for update (slow, but bandwidth efficient)"`
-		UpdateURL  string `long:"aix-update-url" description:"Force ZSync (source) URL"`
+		UpdateURL  string `long:"aix-update-url" description:"Force ZSync (source) URL" env: "AIX_UPDATE_URL"`
 		UpdateFile string `long:"aix-update-file" description:"Force local AppImage (destination) file path for update" env:"APPIMAGE"`
 		Target     string `long:"aix-target" description:"Run internal tool/script (instead of main application)" env:"AIX_TARGET"`
 		Install    bool   `long:"aix-install" description:"Shortcut for --aix-target=aix.d/install"`
+		PostUpdate bool   `long:"aix-post-update" description:"Run post-update tool/script at aix.d/postupdate (runs automatically after updates)" env:"AIX_POST_UPDATE"`
 		Help       bool   `long:"aix-help" description:"Show this help message"`
 	}
 
@@ -60,6 +62,24 @@ func main() {
 		os.Exit(1)
 	}
 
+	if opts.PostUpdate {
+		cmd := appDir + "/aix.d/postupdate"
+		_, err := os.Stat(cmd)
+		if errors.Is(err, os.ErrNotExist) {
+			fmt.Println("No postupdate needed")
+		} else if err != nil {
+			panic(err)
+		} else {
+			out, err := exec.Command(cmd).Output()
+			if err != nil {
+				panic(err)
+			}
+			fmt.Printf("Postupdate run complete: %s\n", out)
+		}
+		os.Unsetenv("AIX_POST_UPDATE")
+		opts.PostUpdate = false
+	}
+
 	if opts.AutoUpdate {
 		opts.Update = true
 	}
@@ -73,6 +93,8 @@ func main() {
 		if errors.Is(err, os.ErrNotExist) {
 			fmt.Println("No install target executable (aix.d/install) found!")
 			os.Exit(1)
+		} else if err != nil {
+			panic(err)
 		}
 		opts.Target = "aix.d/install"
 	}
@@ -99,25 +121,27 @@ func main() {
 		updated, err := doUpdate(opts.UpdateFile, opts.UpdateURL, opts.UseZSync)
 		if err != nil {
 			fmt.Println("Error during update: ", err)
-			os.Exit(1)
+			if !opts.AutoUpdate {
+				os.Exit(1)
+			}
 		}
+
 		if updated {
 			fmt.Println("Successfully updated.")
-		} else {
-			fmt.Println("No update needed.")
-		}
-
-		if opts.AutoUpdate && updated {
 			// Clean environment
 			os.Unsetenv("AIX_TARGET")
+
+			// Prep to run the post-update script
+			os.Setenv("AIX_POST_UPDATE", "1")
+
 			// Exec the newly updated AppImage
 			opts.Target = opts.UpdateFile
+		} else if err == nil {
+			fmt.Println("No update needed.")
+			if !opts.AutoUpdate {
+				os.Exit(0)
+			}
 		}
-
-		if !opts.AutoUpdate {
-			os.Exit(0)
-		}
-
 	}
 
 	if opts.Target == "" {
