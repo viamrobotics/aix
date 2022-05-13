@@ -11,7 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
+	//"os/exec"
 	"os/signal"
 	"path"
 	"strings"
@@ -28,6 +28,7 @@ import (
 
 func fatal(err error) {
 	fmt.Println(err)
+	fmt.Println("SMURF")
 	os.Exit(1)
 }
 
@@ -67,6 +68,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	if opts.AutoUpdate {
+		opts.Update = true
+	}
+
 	if opts.PostUpdate {
 		cmd := appDir + "/aix.d/postupdate"
 		_, err := os.Stat(cmd)
@@ -75,7 +80,7 @@ func main() {
 		} else if err != nil {
 			fatal(err)
 		} else {
-			out, err := exec.Command(cmd).Output()
+			out, err := "", errors.New("SMURF99") //exec.Command(cmd).Output()
 			if err != nil {
 				fmt.Printf("Postupdate run failed: %s\n", out)
 				fatal(err)
@@ -84,10 +89,7 @@ func main() {
 		}
 		os.Unsetenv("AIX_POST_UPDATE")
 		opts.PostUpdate = false
-	}
-
-	if opts.AutoUpdate {
-		opts.Update = true
+		opts.Update = false
 	}
 
 	if opts.Install {
