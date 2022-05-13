@@ -34,7 +34,7 @@ func main() {
 		Update     bool   `long:"aix-update" description:"Update and exit"`
 		AutoUpdate bool   `long:"aix-auto-update" description:"Update and run main app from new version" env:"AIX_AUTO_UPDATE"`
 		UseZSync   bool   `long:"aix-use-zsync" description:"Use zSync for update (slow, but bandwidth efficient)"`
-		UpdateURL  string `long:"aix-update-url" description:"Force ZSync (source) URL" env: "AIX_UPDATE_URL"`
+		UpdateURL  string `long:"aix-update-url" description:"Force ZSync (source) URL" env:"AIX_UPDATE_URL"`
 		UpdateFile string `long:"aix-update-file" description:"Force local AppImage (destination) file path for update" env:"APPIMAGE"`
 		Target     string `long:"aix-target" description:"Run internal tool/script (instead of main application)" env:"AIX_TARGET"`
 		Install    bool   `long:"aix-install" description:"Shortcut for --aix-target=aix.d/install"`
