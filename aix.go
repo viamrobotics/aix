@@ -56,6 +56,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	fmt.Printf("SMURF 1: (%s)\n", shellescape.QuoteCommand(args))
+
 	var b bytes.Buffer
 	p.WriteHelp(&b)
 	helpString := b.String()
@@ -111,6 +113,8 @@ func main() {
 		opts.Target = "aix.d/install"
 	}
 
+	fmt.Printf("SMURF 2: (%s)\n", shellescape.QuoteCommand(args))
+
 	if opts.Update {
 		if opts.UpdateFile == "" {
 			fmt.Println("No AppImage file to update!")
@@ -146,10 +150,10 @@ func main() {
 
 			// Exec the newly updated AppImage
 			cmd := shellescape.QuoteCommand(args)
-			fmt.Printf("SMURF: (%s)\n", cmd)
+			fmt.Printf("SMURF RELOAD: (%s)\n", cmd)
 			env := os.Environ()
 			newArgs := []string{"bash", "-c", cmd}
-			panic(syscall.Exec("bash", newArgs, env))
+			panic(syscall.Exec(appDir + "/bin/bash", newArgs, env))
 
 		} else if err == nil {
 			fmt.Println("No update needed.")
@@ -175,7 +179,7 @@ func main() {
 	newArgs := []string{opts.Target}
 	newArgs = append(newArgs, args...)
 
-	fmt.Println("SMURF ", newArgs, env)
+	fmt.Println("SMURF OUT:", newArgs, env)
 	// We are completely replacing ourselves with the new app
 	// This should never return, so we panic if it does
 	panic(syscall.Exec(opts.Target, newArgs, env))
