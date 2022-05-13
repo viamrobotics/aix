@@ -11,7 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	//"os/exec"
+	"os/exec"
 	"os/signal"
 	"path"
 	"strings"
@@ -51,7 +51,7 @@ func main() {
 	args, err := p.Parse()
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	var b bytes.Buffer
@@ -60,7 +60,7 @@ func main() {
 
 	if opts.Help {
 		fmt.Println(helpString)
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	if opts.AutoUpdate {
@@ -78,13 +78,13 @@ func main() {
 			fmt.Println("No postupdate needed")
 		} else if err != nil {
 			fmt.Println(err)
-			os.Exit(0)
+			os.Exit(1)
 		} else {
-			out, err := "", errors.New("SMURF99") //exec.Command(cmd).Output()
+			out, err := exec.Command(cmd).Output()
 			if err != nil {
 				fmt.Printf("Postupdate run failed: %s\n", out)
 				fmt.Println(err)
-				panic(err) //os.Exit(0)
+				os.Exit(1)
 			}
 			fmt.Printf("Postupdate run complete: %s\n", out)
 		}
@@ -96,15 +96,15 @@ func main() {
 	if opts.Install {
 		if opts.Update {
 			fmt.Println("Can't update and install at the same time. Please update first.")
-			os.Exit(0)
+			os.Exit(1)
 		}
 		_, err := os.Stat(appDir + "/aix.d/install")
 		if errors.Is(err, os.ErrNotExist) {
 			fmt.Println("No install target executable (aix.d/install) found!")
-			os.Exit(0)
+			os.Exit(1)
 		} else if err != nil {
 			fmt.Println(err)
-			os.Exit(0)
+			os.Exit(1)
 		}
 		opts.Target = "aix.d/install"
 	}
@@ -112,7 +112,7 @@ func main() {
 	if opts.Update {
 		if opts.UpdateFile == "" {
 			fmt.Println("No AppImage file to update!")
-			os.Exit(0)
+			os.Exit(1)
 		}
 
 		if opts.UpdateURL == "" {
@@ -120,7 +120,7 @@ func main() {
 			opts.UpdateURL, err = GetURLFromImage(opts.UpdateFile)
 			if err != nil {
 				fmt.Println(err)
-				os.Exit(0)
+				os.Exit(1)
 			}
 		}
 
@@ -130,7 +130,7 @@ func main() {
 		if err != nil {
 			fmt.Println("Error during update: ", err)
 			if !opts.AutoUpdate {
-				os.Exit(0)
+				os.Exit(1)
 			}
 		}
 
@@ -155,19 +155,20 @@ func main() {
 	if opts.Target == "" {
 		fmt.Println("Error: no exectuable target set!")
 		fmt.Println(helpString)
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	err = unix.Access(opts.Target, unix.X_OK)
 	if err != nil {
 		fmt.Printf("Can't execute target '%s': %s", opts.Target, err)
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	env := os.Environ()
 	newArgs := []string{opts.Target}
 	newArgs = append(newArgs, args...)
 
+	fmt.Println("SMURF ", newArgs, env)
 	// We are completely replacing ourselves with the new app
 	// This should never return, so we panic if it does
 	panic(syscall.Exec(opts.Target, newArgs, env))
