@@ -72,6 +72,7 @@ func main() {
 		} else {
 			out, err := exec.Command(cmd).Output()
 			if err != nil {
+				fmt.Printf("Postupdate run failed: %s\n", out)
 				panic(err)
 			}
 			fmt.Printf("Postupdate run complete: %s\n", out)
