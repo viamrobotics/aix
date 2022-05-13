@@ -149,7 +149,7 @@ func main() {
 			fmt.Printf("SMURF: (%s)\n", cmd)
 			env := os.Environ()
 			newArgs := []string{"bash", "-c", cmd}
-			panic(syscall.Exec(opts.Target, newArgs, env))
+			panic(syscall.Exec("bash", newArgs, env))
 
 		} else if err == nil {
 			fmt.Println("No update needed.")
