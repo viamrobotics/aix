@@ -67,6 +67,10 @@ func main() {
 		opts.Update = true
 	}
 
+	if appDir != "" {
+		opts.Target = appDir + "/" + strings.TrimPrefix(opts.Target, "/")
+	}
+
 	if opts.PostUpdate {
 		cmd := appDir + "/aix.d/postupdate"
 		_, err := os.Stat(cmd)
@@ -103,10 +107,6 @@ func main() {
 			os.Exit(0)
 		}
 		opts.Target = "aix.d/install"
-	}
-
-	if appDir != "" {
-		opts.Target = appDir + "/" + strings.TrimPrefix(opts.Target, "/")
 	}
 
 	if opts.Update {
