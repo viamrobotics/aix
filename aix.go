@@ -194,8 +194,13 @@ func filterEnv(curEnv []string) (strippedEnv []string) {
 			continue
 		}
 
-		if strings.Contains(key, "APPRUN") || strings.Contains(key, "APPIMAGE") || strings.Contains(key, "APPDIR"){
-			continue
+		if  strings.Contains(key, "APPRUN") || 
+			strings.Contains(key, "APPIMAGE") || 
+			strings.Contains(key, "APPDIR") || 
+			strings.Contains(key, "LD_PRELOAD") ||
+			strings.Contains(key, "LD_PRELOAD") ||
+			strings.Contains(val, "/tmp/.mount_") {
+				continue
 		}
 
 		if _, ok := workingEnv[key]; ok {
