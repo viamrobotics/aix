@@ -179,7 +179,7 @@ func main() {
 }
 
 func filterEnv(curEnv []string) (strippedEnv []string) {
-	var workingEnv map[string]string	
+	workingEnv := make(map[string]string)
 	for _, env := range curEnv {
 		split := strings.Split(env, "=")
 		var key, val string
