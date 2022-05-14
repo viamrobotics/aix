@@ -146,9 +146,8 @@ func main() {
 
 			// Exec the newly updated AppImage
 			cmd := shellescape.QuoteCommand(append([]string{opts.UpdateFile}, args...))
-			env := os.Environ()
 			newArgs := []string{"bash", "-c", cmd}
-			panic(syscall.Exec(appDir + "/bin/bash", newArgs, env))
+			panic(syscall.Exec(appDir + "/bin/bash", newArgs, filterEnv(os.Environ())))
 
 		} else if err == nil {
 			fmt.Println("No update needed.")
@@ -177,6 +176,41 @@ func main() {
 	// We are completely replacing ourselves with the new app
 	// This should never return, so we panic if it does
 	panic(syscall.Exec(opts.Target, newArgs, env))
+}
+
+func filterEnv(curEnv []string) (strippedEnv []string) {
+	var workingEnv map[string]string	
+	for _, env := range curEnv {
+		split := strings.Split(env, "=")
+		var key, val string
+		key = split[0]
+		if len(split) > 1 {
+			val = split[1]
+		}
+
+		if strings.Contains(key, "APPRUN_ORIGINAL_") {
+			key = strings.TrimPrefix(key, "APPRUN_ORIGINAL_")
+			workingEnv[key] = val
+			continue
+		}
+
+		if strings.Contains(key, "APPRUN") || strings.Contains(key, "APPIMAGE") || strings.Contains(key, "APPDIR"){
+			continue
+		}
+
+		if _, ok := workingEnv[key]; ok {
+			continue
+		}
+
+		workingEnv[key] = val
+		
+	}
+
+	for key, val := range workingEnv {
+		strippedEnv = append(strippedEnv, key + "=" + val)
+		fmt.Println(key + "=" + val)
+	}
+	return
 }
 
 func GetSHA1(filePath string) (string, error) {
