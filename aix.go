@@ -325,6 +325,9 @@ func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 		return false, err
 	}
 
+
+	tmpFile.Close()
+
 	// Prep to run the post-update script
 	os.Setenv("AIX_POST_UPDATE", "1")
 	out, err := exec.Command("bash", "-c", tmpFile.Name()).CombinedOutput()
