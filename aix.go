@@ -141,7 +141,7 @@ func main() {
 		if updated {
 			fmt.Println("Successfully updated.")
 			// Clean environment
-			os.Unsetenv("AIX_TARGET")
+			// os.Unsetenv("AIX_TARGET")
 
 			// Prep to run the post-update script
 			os.Setenv("AIX_POST_UPDATE", "1")
@@ -153,6 +153,7 @@ func main() {
 				if !opts.AutoUpdate{ os.Exit(1) }
 			}
 			if opts.AutoUpdate {
+				os.Unsetenv("AIX_POST_UPDATE")
 				opts.Target = opts.UpdateFile
 			}
 		} else if err == nil {
