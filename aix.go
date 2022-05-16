@@ -15,15 +15,15 @@ import (
 	//"os/signal"
 	"path"
 	"strings"
-	//"sync"
+	"sync"
 	"syscall"
-	//"time"
+	"time"
 
 	"golang.org/x/sys/unix"
 
 	"github.com/Otterverse/libzsync-go"
 	"github.com/jessevdk/go-flags"
-	//"github.com/schollz/progressbar/v3"
+	"github.com/schollz/progressbar/v3"
 	//"github.com/alessio/shellescape"
 )
 
@@ -250,47 +250,47 @@ func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 	defer tmpFile.Close()
 
 	// Systemd and other loggers don't handle the progress bar well
-	// shellPrompt := os.Getenv("TERM")
-	// var interactive bool
-	// if shellPrompt != "" {
-	// 	interactive = true
-	// }
+	shellPrompt := os.Getenv("TERM")
+	var interactive bool
+	if shellPrompt != "" {
+		interactive = true
+	}
 
-	// var bar *progressbar.ProgressBar
-	// var workers sync.WaitGroup
-	// if interactive {
-	// 	bar = progressbar.DefaultBytes(zs.RemoteFileSize, "Updating")
-	// } else {
-	// 	// If not in a shell, only print a few lines
-	// 	bar = progressbar.DefaultBytesSilent(zs.RemoteFileSize, "Updating")
-	// 	workers.Add(1)
-	// 	defer workers.Wait()
-	// 	go func() {
-	// 		defer workers.Done()
-	// 		for {
-	// 			state := bar.State()
-	// 			fmt.Printf(
-	// 				"Updating...  %.2f%% done | %d/%d bytes\n",
-	// 				state.CurrentPercent*100,
-	// 				int(state.CurrentBytes),
-	// 				int(zs.RemoteFileSize),
-	// 			)
-	// 			if state.CurrentPercent >= 1.0 {
-	// 				break
-	// 			}
-	// 			time.Sleep(time.Second)
-	// 		}
-	// 	}()
-	// }
-	// if useZSync {
-	// 	err = zs.Sync(filePath, &progressMultiWriter{bar, tmpFile})
-	// } else {
-	// 	err = downloadFile(zs.RemoteFileUrl, &progressMultiWriter{bar, tmpFile})
-	// }
-	// bar.Finish()
-	// if err != nil {
-	// 	return false, err
-	// }
+	var bar *progressbar.ProgressBar
+	var workers sync.WaitGroup
+	if interactive {
+		bar = progressbar.DefaultBytes(zs.RemoteFileSize, "Updating")
+	} else {
+		// If not in a shell, only print a few lines
+		bar = progressbar.DefaultBytesSilent(zs.RemoteFileSize, "Updating")
+		workers.Add(1)
+		defer workers.Wait()
+		go func() {
+			defer workers.Done()
+			for {
+				state := bar.State()
+				fmt.Printf(
+					"Updating...  %.2f%% done | %d/%d bytes\n",
+					state.CurrentPercent*100,
+					int(state.CurrentBytes),
+					int(zs.RemoteFileSize),
+				)
+				if state.CurrentPercent >= 1.0 {
+					break
+				}
+				time.Sleep(time.Second)
+			}
+		}()
+	}
+	if useZSync {
+		err = zs.Sync(filePath, &progressMultiWriter{bar, tmpFile})
+	} else {
+		err = downloadFile(zs.RemoteFileUrl, &progressMultiWriter{bar, tmpFile})
+	}
+	bar.Finish()
+	if err != nil {
+		return false, err
+	}
 
 	// shaSum, err = GetSHA1(filePath)
 	// if err != nil {
