@@ -158,6 +158,10 @@ func main() {
 		} else if err == nil {
 			fmt.Println("No update needed.")
 		}
+
+		if !opts.AutoUpdate {
+			return
+		}
 	}
 
 	if opts.Target == "" {
@@ -309,10 +313,6 @@ func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 	// Then there's the two lines below... like demonic waterfowl, they slowly nibble away my sanity
 	uid := int(fileInfo.Sys().(*syscall.Stat_t).Uid)
 	gid := int(fileInfo.Sys().(*syscall.Stat_t).Gid)
-
-	// Real update starts, so don't let this interrupt in an ugly way
-	// signal.Ignore(syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	// defer signal.Reset(syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
 	err = os.Rename(tmpFile.Name(), filePath)
 	if err != nil {
