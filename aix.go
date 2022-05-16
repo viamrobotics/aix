@@ -332,19 +332,17 @@ func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 	tmpFile.Close()
 
 	// Prep to run the post-update script
-	fmt.Println(os.Environ())
 	os.Setenv("AIX_POST_UPDATE", "1")
-	out, err := exec.Command("bash", "-c", tmpFile.Name()).CombinedOutput()
+	out, err := exec.Command("bash", "-c", "/usr/local/bin/cubeeyegrpcserver || true").CombinedOutput()
 	fmt.Printf("POSTUPDATE: %s\n", out)
-	fmt.Println(os.Environ())
 	if err != nil {
 		return false, err
 	}
 
-	// err = os.Rename(tmpFile.Name(), filePath)
-	// if err != nil {
-	// 	return false, err
-	// }
+	err = os.Rename(tmpFile.Name(), filePath)
+	if err != nil {
+		return false, err
+	}
 
 	return true, nil
 }
