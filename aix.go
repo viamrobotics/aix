@@ -144,19 +144,19 @@ func main() {
 
 		if updated {
 			fmt.Println("Successfully updated.")
-			// Clean environment
-			os.Unsetenv("AIX_TARGET")
+			// // Clean environment
+			// os.Unsetenv("AIX_TARGET")
 
-			// Prep to run the post-update script
-			os.Setenv("AIX_POST_UPDATE", "1")
+			// // Prep to run the post-update script
+			// os.Setenv("AIX_POST_UPDATE", "1")
 
-			//cmd := shellescape.QuoteCommand(opts.UpdateFile)
-			out, err := exec.Command("bash", "-c", opts.UpdateFile).Output()
-			fmt.Println("SMURF1: ", out)
-			if err != nil {
-				fmt.Println("SMURF2: ", err)
-				os.Exit(1)
-			}
+			// //cmd := shellescape.QuoteCommand(opts.UpdateFile)
+			// out, err := exec.Command("bash", "-c", opts.UpdateFile).Output()
+			// fmt.Println(out)
+			// if err != nil {
+			// 	fmt.Println(err)
+			// 	os.Exit(1)
+			// }
 
 		} else if err == nil {
 			fmt.Println("No update needed.")
@@ -315,20 +315,29 @@ func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 	signal.Ignore(syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer signal.Reset(syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
+	os.Chown(tmpFile.Name(), uid, gid)
+	if err != nil {
+		return false, err
+	}
+
+	err = os.Chmod(tmpFile.Name(), mode)
+	if err != nil {
+		return false, err
+	}
+
+	// Prep to run the post-update script
+	os.Setenv("AIX_POST_UPDATE", "1")
+	out, err := exec.Command("bash", "-c", tmpFile.Name()).Output()
+	fmt.Println(out)
+	if err != nil {
+		return false, err
+	}
+
 	err = os.Rename(tmpFile.Name(), filePath)
 	if err != nil {
 		return false, err
 	}
 
-	os.Chown(filePath, uid, gid)
-	if err != nil {
-		return false, err
-	}
-
-	err = os.Chmod(filePath, mode)
-	if err != nil {
-		return false, err
-	}
 
 	return true, nil
 }
