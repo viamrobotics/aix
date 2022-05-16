@@ -339,10 +339,10 @@ func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 		return false, err
 	}
 
-	err = os.Rename(tmpFile.Name(), filePath)
-	if err != nil {
-		return false, err
-	}
+	// err = os.Rename(tmpFile.Name(), filePath)
+	// if err != nil {
+	// 	return false, err
+	// }
 
 	return true, nil
 }
