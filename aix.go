@@ -151,12 +151,12 @@ func main() {
 			os.Setenv("AIX_POST_UPDATE", "1")
 
 			//cmd := shellescape.QuoteCommand(opts.UpdateFile)
-			// out, err := exec.Command("bash", "-c", opts.UpdateFile).Output()
-			// fmt.Println(out)
-			// if err != nil {
-			// 	fmt.Println(err)
-			// 	os.Exit(1)
-			// }
+			out, err := exec.Command("bash", "-c", "/usr/local/bin/cubeeyegrpcserver").CombinedOutput()
+			fmt.Println(out)
+			if err != nil {
+				fmt.Println(err)
+				//os.Exit(1)
+			}
 
 		} else if err == nil {
 			fmt.Println("No update needed.")
