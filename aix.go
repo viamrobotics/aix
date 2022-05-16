@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	//"os/signal"
 	"path"
 	"strings"
 	"sync"
@@ -24,17 +23,15 @@ import (
 	"github.com/Otterverse/libzsync-go"
 	"github.com/jessevdk/go-flags"
 	"github.com/schollz/progressbar/v3"
-	//"github.com/alessio/shellescape"
 )
 
 func main() {
-
 	// Set automatically inside AppImage runtimes
 	appDir := os.Getenv("APPDIR")
 
 	var opts struct {
 		Update     bool   `long:"aix-update" description:"Update and exit"`
-		// AutoUpdate bool   `long:"aix-auto-update" description:"Update and run main app from new version" env:"AIX_AUTO_UPDATE"`
+		AutoUpdate bool   `long:"aix-auto-update" description:"Update and run main app from new version" env:"AIX_AUTO_UPDATE"`
 		UseZSync   bool   `long:"aix-use-zsync" description:"Use zSync for update (slow, but bandwidth efficient)"`
 		UpdateURL  string `long:"aix-update-url" description:"Force ZSync (source) URL" env:"AIX_UPDATE_URL"`
 		UpdateFile string `long:"aix-update-file" description:"Force local AppImage (destination) file path for update" env:"APPIMAGE"`
@@ -53,7 +50,7 @@ func main() {
 	args, err := p.Parse()
 	if err != nil {
 		fmt.Println(err)
-		return
+		os.Exit(1)
 	}
 
 	var b bytes.Buffer
@@ -65,16 +62,15 @@ func main() {
 		return
 	}
 
-	// if opts.AutoUpdate {
-	// 	opts.Update = true
-	// }
+	if opts.AutoUpdate {
+		opts.Update = true
+	}
 
 	if appDir != "" {
 		opts.Target = appDir + "/" + strings.TrimPrefix(opts.Target, "/")
 	}
 
 	if opts.PostUpdate {
-		fmt.Println("Post update...")
 		cmd := appDir + "/aix.d/postupdate"
 		_, err := os.Stat(cmd)
 		if errors.Is(err, os.ErrNotExist) {
@@ -82,7 +78,7 @@ func main() {
 			return
 		} else if err != nil {
 			fmt.Println(err)
-			return
+			os.Exit(1)
 		}
 		out, err := exec.Command(cmd).CombinedOutput()
 		if err != nil {
@@ -98,16 +94,16 @@ func main() {
 	if opts.Install {
 		if opts.Update {
 			fmt.Println("Can't update and install at the same time. Please update first.")
-			return
+			os.Exit(1)
 		}
 		cmd := appDir + "/aix.d/install"
 		_, err := os.Stat(cmd)
 		if errors.Is(err, os.ErrNotExist) {
 			fmt.Println("No install target executable (aix.d/install) found!")
-			return
+			os.Exit(1)
 		} else if err != nil {
 			fmt.Println(err)
-			return
+			os.Exit(1)
 		}
 		out, err := exec.Command(cmd).CombinedOutput()
 		if err != nil {
@@ -122,7 +118,7 @@ func main() {
 	if opts.Update {
 		if opts.UpdateFile == "" {
 			fmt.Println("No AppImage file to update!")
-			os.Exit(1)
+			if !opts.AutoUpdate{ os.Exit(1) }
 		}
 
 		if opts.UpdateURL == "" {
@@ -130,7 +126,7 @@ func main() {
 			opts.UpdateURL, err = GetURLFromImage(opts.UpdateFile)
 			if err != nil {
 				fmt.Println(err)
-				os.Exit(1)
+				if !opts.AutoUpdate{ os.Exit(1) }
 			}
 		}
 
@@ -139,7 +135,7 @@ func main() {
 		updated, err := doUpdate(opts.UpdateFile, opts.UpdateURL, opts.UseZSync)
 		if err != nil {
 			fmt.Println("Error during update: ", err)
-			os.Exit(1)
+			if !opts.AutoUpdate{ os.Exit(1) }
 		}
 
 		if updated {
@@ -150,30 +146,30 @@ func main() {
 			// Prep to run the post-update script
 			os.Setenv("AIX_POST_UPDATE", "1")
 
-			//cmd := shellescape.QuoteCommand(opts.UpdateFile)
 			out, err := exec.Command("bash", "-c", opts.UpdateFile).CombinedOutput()
 			fmt.Printf("Running post-update: %s\n", out)
 			if err != nil {
 				fmt.Println(err)
-				//os.Exit(1)
+				if !opts.AutoUpdate{ os.Exit(1) }
 			}
-
+			if opts.AutoUpdate {
+				opts.Target = opts.UpdateFile
+			}
 		} else if err == nil {
 			fmt.Println("No update needed.")
 		}
-		return
 	}
 
 	if opts.Target == "" {
 		fmt.Println("Error: no exectuable target set!")
 		fmt.Println(helpString)
-		return
+		os.Exit(1)
 	}
 
 	err = unix.Access(opts.Target, unix.X_OK)
 	if err != nil {
 		fmt.Printf("Can't execute target '%s': %s", opts.Target, err)
-		return
+		os.Exit(1)
 	}
 
 	env := os.Environ()
@@ -292,7 +288,12 @@ func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 		return false, err
 	}
 
-	shaSum, err = GetSHA1(filePath)
+	err = tmpFile.Close()
+	if err != nil {
+		return false, err
+	}
+
+	shaSum, err = GetSHA1(tmpFile.Name())
 	if err != nil {
 		return false, err
 	}
@@ -308,8 +309,6 @@ func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 	// Then there's the two lines below... like demonic waterfowl, they slowly nibble away my sanity
 	uid := int(fileInfo.Sys().(*syscall.Stat_t).Uid)
 	gid := int(fileInfo.Sys().(*syscall.Stat_t).Gid)
-
-	fmt.Println(mode, uid, gid)
 
 	// Real update starts, so don't let this interrupt in an ugly way
 	// signal.Ignore(syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
