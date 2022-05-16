@@ -87,7 +87,6 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Printf("Post-update run complete: %s\n", out)
-		os.Unsetenv("AIX_POST_UPDATE")
 		return
 	}
 
@@ -118,7 +117,9 @@ func main() {
 	if opts.Update {
 		if opts.UpdateFile == "" {
 			fmt.Println("No AppImage file to update!")
-			if !opts.AutoUpdate{ os.Exit(1) }
+			if !opts.AutoUpdate {
+				os.Exit(1)
+			}
 		}
 
 		if opts.UpdateURL == "" {
@@ -126,7 +127,9 @@ func main() {
 			opts.UpdateURL, err = GetURLFromImage(opts.UpdateFile)
 			if err != nil {
 				fmt.Println(err)
-				if !opts.AutoUpdate{ os.Exit(1) }
+				if !opts.AutoUpdate {
+					os.Exit(1)
+				}
 			}
 		}
 
@@ -135,13 +138,13 @@ func main() {
 		updated, err := doUpdate(opts.UpdateFile, opts.UpdateURL, opts.UseZSync)
 		if err != nil {
 			fmt.Println("Error during update: ", err)
-			if !opts.AutoUpdate{ os.Exit(1) }
+			if !opts.AutoUpdate {
+				os.Exit(1)
+			}
 		}
 
 		if updated {
 			fmt.Println("Successfully updated.")
-			// Clean environment
-			// os.Unsetenv("AIX_TARGET")
 
 			// Prep to run the post-update script
 			os.Setenv("AIX_POST_UPDATE", "1")
@@ -150,7 +153,9 @@ func main() {
 			fmt.Printf("Running post-update: %s\n", out)
 			if err != nil {
 				fmt.Println(err)
-				if !opts.AutoUpdate{ os.Exit(1) }
+				if !opts.AutoUpdate {
+					os.Exit(1)
+				}
 			}
 			if opts.AutoUpdate {
 				os.Unsetenv("AIX_POST_UPDATE")
