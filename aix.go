@@ -151,8 +151,8 @@ func main() {
 			os.Setenv("AIX_POST_UPDATE", "1")
 
 			//cmd := shellescape.QuoteCommand(opts.UpdateFile)
-			out, err := exec.Command(appDir + "/aix.d/restart-self", opts.UpdateFile).CombinedOutput()
-			fmt.Println("Running post-update: %s\n", out)
+			out, err := exec.Command(opts.UpdateFile).CombinedOutput()
+			fmt.Printf("Running post-update: %s\n", out)
 			if err != nil {
 				fmt.Println(err)
 				//os.Exit(1)
