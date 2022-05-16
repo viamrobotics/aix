@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"os/signal"
+	//"os/signal"
 	"path"
 	"strings"
 	"sync"
@@ -312,8 +312,8 @@ func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 	fmt.Println(mode, uid, gid)
 
 	// Real update starts, so don't let this interrupt in an ugly way
-	signal.Ignore(syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	defer signal.Reset(syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	// signal.Ignore(syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	// defer signal.Reset(syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
 	// err = os.Rename(tmpFile.Name(), filePath)
 	// if err != nil {
