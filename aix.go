@@ -298,7 +298,7 @@ func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 		return false, err
 	}
 
-	if shaSum == zs.RemoteFileSHA1 {
+	if shaSum != zs.RemoteFileSHA1 {
 		return false, fmt.Errorf("Checksum mismatch after update. Got: %s, Expected: %s", shaSum, zs.RemoteFileSHA1)
 	}
 
