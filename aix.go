@@ -84,11 +84,11 @@ func main() {
 			fmt.Println(err)
 			return
 		}
-		out, err := exec.Command(cmd).Output()
+		out, err := exec.Command(cmd).CombinedOutput()
 		if err != nil {
 			fmt.Printf("Postupdate run failed: %s\n", out)
 			fmt.Println(err)
-			return
+			os.Exit(1)
 		}
 		fmt.Printf("Postupdate run complete: %s\n", out)
 		os.Unsetenv("AIX_POST_UPDATE")
@@ -109,11 +109,11 @@ func main() {
 			fmt.Println(err)
 			return
 		}
-		out, err := exec.Command(cmd).Output()
+		out, err := exec.Command(cmd).CombinedOutput()
 		if err != nil {
 			fmt.Printf("Install run failed: %s\n", out)
 			fmt.Println(err)
-			return
+			os.Exit(1)
 		}
 		fmt.Printf("Install run complete: %s\n", out)
 		return
@@ -122,7 +122,7 @@ func main() {
 	if opts.Update {
 		if opts.UpdateFile == "" {
 			fmt.Println("No AppImage file to update!")
-			return
+			os.Exit(1)
 		}
 
 		if opts.UpdateURL == "" {
@@ -130,7 +130,7 @@ func main() {
 			opts.UpdateURL, err = GetURLFromImage(opts.UpdateFile)
 			if err != nil {
 				fmt.Println(err)
-				return
+				os.Exit(1)
 			}
 		}
 
@@ -139,32 +139,27 @@ func main() {
 		updated, err := doUpdate(opts.UpdateFile, opts.UpdateURL, opts.UseZSync)
 		if err != nil {
 			fmt.Println("Error during update: ", err)
-			// if !opts.AutoUpdate {
-				return
-			// }
+			os.Exit(1)
 		}
 
 		if updated {
 			fmt.Println("Successfully updated.")
-			// // Clean environment
-			// os.Unsetenv("AIX_TARGET")
+			// Clean environment
+			os.Unsetenv("AIX_TARGET")
 
-			// // Prep to run the post-update script
-			// os.Setenv("AIX_POST_UPDATE", "1")
+			// Prep to run the post-update script
+			os.Setenv("AIX_POST_UPDATE", "1")
 
-			// //cmd := shellescape.QuoteCommand(opts.UpdateFile)
+			//cmd := shellescape.QuoteCommand(opts.UpdateFile)
 			// out, err := exec.Command("bash", "-c", opts.UpdateFile).Output()
 			// fmt.Println(out)
 			// if err != nil {
 			// 	fmt.Println(err)
-			// 	return
+			// 	os.Exit(1)
 			// }
 
 		} else if err == nil {
 			fmt.Println("No update needed.")
-			// if !opts.AutoUpdate {
-				// return
-			// }
 		}
 		return
 	}
@@ -318,31 +313,20 @@ func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 	signal.Ignore(syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer signal.Reset(syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
-	os.Chown(tmpFile.Name(), uid, gid)
+	err = os.Rename(tmpFile.Name(), filePath)
 	if err != nil {
 		return false, err
 	}
 
-	err = os.Chmod(tmpFile.Name(), mode)
+	os.Chown(filePath, uid, gid)
 	if err != nil {
 		return false, err
 	}
 
-
-	tmpFile.Close()
-
-	// Prep to run the post-update script
-	os.Setenv("AIX_POST_UPDATE", "1")
-	out, err := exec.Command("bash", "-c", "env && /usr/local/bin/cubeeyegrpcserver; env").CombinedOutput()
-	fmt.Printf("POSTUPDATE: %s\n", out)
+	err = os.Chmod(filePath, mode)
 	if err != nil {
 		return false, err
 	}
-
-	// err = os.Rename(tmpFile.Name(), filePath)
-	// if err != nil {
-	// 	return false, err
-	// }
 
 	return true, nil
 }
