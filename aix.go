@@ -315,20 +315,20 @@ func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 	// signal.Ignore(syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	// defer signal.Reset(syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
-	// err = os.Rename(tmpFile.Name(), filePath)
-	// if err != nil {
-	// 	return false, err
-	// }
+	err = os.Rename(tmpFile.Name(), filePath)
+	if err != nil {
+		return false, err
+	}
 
-	// os.Chown(filePath, uid, gid)
-	// if err != nil {
-	// 	return false, err
-	// }
+	os.Chown(filePath, uid, gid)
+	if err != nil {
+		return false, err
+	}
 
-	// err = os.Chmod(filePath, mode)
-	// if err != nil {
-	// 	return false, err
-	// }
+	err = os.Chmod(filePath, mode)
+	if err != nil {
+		return false, err
+	}
 
 	return true, nil
 }
