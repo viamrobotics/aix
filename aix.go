@@ -53,7 +53,7 @@ func main() {
 	args, err := p.Parse()
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		return
 	}
 
 	var b bytes.Buffer
@@ -62,7 +62,7 @@ func main() {
 
 	if opts.Help {
 		fmt.Println(helpString)
-		os.Exit(1)
+		return
 	}
 
 	// if opts.AutoUpdate {
@@ -80,13 +80,13 @@ func main() {
 			fmt.Println("No postupdate needed")
 		} else if err != nil {
 			fmt.Println(err)
-			os.Exit(1)
+			return
 		}
 		out, err := exec.Command(cmd).Output()
 		if err != nil {
 			fmt.Printf("Postupdate run failed: %s\n", out)
 			fmt.Println(err)
-			os.Exit(1)
+			return
 		}
 		fmt.Printf("Postupdate run complete: %s\n", out)
 		os.Unsetenv("AIX_POST_UPDATE")
@@ -96,22 +96,22 @@ func main() {
 	if opts.Install {
 		if opts.Update {
 			fmt.Println("Can't update and install at the same time. Please update first.")
-			os.Exit(1)
+			return
 		}
 		cmd := appDir + "/aix.d/install"
 		_, err := os.Stat(cmd)
 		if errors.Is(err, os.ErrNotExist) {
 			fmt.Println("No install target executable (aix.d/install) found!")
-			os.Exit(1)
+			return
 		} else if err != nil {
 			fmt.Println(err)
-			os.Exit(1)
+			return
 		}
 		out, err := exec.Command(cmd).Output()
 		if err != nil {
 			fmt.Printf("Install run failed: %s\n", out)
 			fmt.Println(err)
-			os.Exit(1)
+			return
 		}
 		fmt.Printf("Install run complete: %s\n", out)
 		return
@@ -120,7 +120,7 @@ func main() {
 	if opts.Update {
 		if opts.UpdateFile == "" {
 			fmt.Println("No AppImage file to update!")
-			os.Exit(1)
+			return
 		}
 
 		if opts.UpdateURL == "" {
@@ -128,7 +128,7 @@ func main() {
 			opts.UpdateURL, err = GetURLFromImage(opts.UpdateFile)
 			if err != nil {
 				fmt.Println(err)
-				os.Exit(1)
+				return
 			}
 		}
 
@@ -138,7 +138,7 @@ func main() {
 		if err != nil {
 			fmt.Println("Error during update: ", err)
 			// if !opts.AutoUpdate {
-				os.Exit(1)
+				return
 			// }
 		}
 
@@ -155,7 +155,7 @@ func main() {
 			// fmt.Println(out)
 			// if err != nil {
 			// 	fmt.Println(err)
-			// 	os.Exit(1)
+			// 	return
 			// }
 
 		} else if err == nil {
@@ -169,13 +169,13 @@ func main() {
 	if opts.Target == "" {
 		fmt.Println("Error: no exectuable target set!")
 		fmt.Println(helpString)
-		os.Exit(1)
+		return
 	}
 
 	err = unix.Access(opts.Target, unix.X_OK)
 	if err != nil {
 		fmt.Printf("Can't execute target '%s': %s", opts.Target, err)
-		os.Exit(1)
+		return
 	}
 
 	env := os.Environ()
