@@ -151,7 +151,7 @@ func main() {
 			os.Setenv("AIX_POST_UPDATE", "1")
 
 			//cmd := shellescape.QuoteCommand(opts.UpdateFile)
-			out, err := exec.Command(opts.UpdateFile).CombinedOutput()
+			out, err := exec.Command("bash", "-c", opts.UpdateFile).CombinedOutput()
 			fmt.Printf("Running post-update: %s\n", out)
 			if err != nil {
 				fmt.Println(err)
