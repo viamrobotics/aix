@@ -163,9 +163,10 @@ func main() {
 		} else if err == nil {
 			fmt.Println("No update needed.")
 			// if !opts.AutoUpdate {
-				return
+				// return
 			// }
 		}
+		return
 	}
 
 	if opts.Target == "" {
@@ -332,7 +333,7 @@ func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 
 	// Prep to run the post-update script
 	os.Setenv("AIX_POST_UPDATE", "1")
-	out, err := exec.Command("bash", "-c", tmpFile.Name()).CombinedOutput()
+	out, err := exec.Command("bash", "-c", "echo SMURF99").CombinedOutput()
 	fmt.Printf("POSTUPDATE: %s\n", out)
 	if err != nil {
 		return false, err
