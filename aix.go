@@ -78,6 +78,7 @@ func main() {
 		_, err := os.Stat(cmd)
 		if errors.Is(err, os.ErrNotExist) {
 			fmt.Println("No postupdate needed")
+			return
 		} else if err != nil {
 			fmt.Println(err)
 			return
@@ -330,7 +331,7 @@ func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 
 	// Prep to run the post-update script
 	os.Setenv("AIX_POST_UPDATE", "1")
-	out, err := exec.Command("bash", "-c", tmpFile.Name()).CombinedOutput()
+	out, err := exec.Command("bash", "-c", "true").CombinedOutput()
 	fmt.Printf("POSTUPDATE: %s\n", out)
 	if err != nil {
 		return false, err
@@ -340,7 +341,6 @@ func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-
 
 	return true, nil
 }
