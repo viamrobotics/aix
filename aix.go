@@ -332,9 +332,11 @@ func doUpdate(filePath string, url string, useZSync bool) (bool, error) {
 	tmpFile.Close()
 
 	// Prep to run the post-update script
+	fmt.Println(os.Environ())
 	os.Setenv("AIX_POST_UPDATE", "1")
-	out, err := exec.Command("bash", "-c", "echo SMURF99").CombinedOutput()
+	out, err := exec.Command("bash", "-c", tmpFile.Name()).CombinedOutput()
 	fmt.Printf("POSTUPDATE: %s\n", out)
+	fmt.Println(os.Environ())
 	if err != nil {
 		return false, err
 	}
