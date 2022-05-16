@@ -24,7 +24,7 @@ import (
 	"github.com/Otterverse/libzsync-go"
 	"github.com/jessevdk/go-flags"
 	"github.com/schollz/progressbar/v3"
-	"github.com/alessio/shellescape"
+	// "github.com/alessio/shellescape"
 )
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 
 	var opts struct {
 		Update     bool   `long:"aix-update" description:"Update and exit"`
-		AutoUpdate bool   `long:"aix-auto-update" description:"Update and run main app from new version" env:"AIX_AUTO_UPDATE"`
+		// AutoUpdate bool   `long:"aix-auto-update" description:"Update and run main app from new version" env:"AIX_AUTO_UPDATE"`
 		UseZSync   bool   `long:"aix-use-zsync" description:"Use zSync for update (slow, but bandwidth efficient)"`
 		UpdateURL  string `long:"aix-update-url" description:"Force ZSync (source) URL" env:"AIX_UPDATE_URL"`
 		UpdateFile string `long:"aix-update-file" description:"Force local AppImage (destination) file path for update" env:"APPIMAGE"`
@@ -65,9 +65,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	if opts.AutoUpdate {
-		opts.Update = true
-	}
+	// if opts.AutoUpdate {
+	// 	opts.Update = true
+	// }
 
 	if appDir != "" {
 		opts.Target = appDir + "/" + strings.TrimPrefix(opts.Target, "/")
@@ -81,18 +81,16 @@ func main() {
 		} else if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
-		} else {
-			out, err := exec.Command(cmd).Output()
-			if err != nil {
-				fmt.Printf("Postupdate run failed: %s\n", out)
-				fmt.Println(err)
-				os.Exit(1)
-			}
-			fmt.Printf("Postupdate run complete: %s\n", out)
 		}
+		out, err := exec.Command(cmd).Output()
+		if err != nil {
+			fmt.Printf("Postupdate run failed: %s\n", out)
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Printf("Postupdate run complete: %s\n", out)
 		os.Unsetenv("AIX_POST_UPDATE")
-		opts.PostUpdate = false
-		opts.Update = false
+		return
 	}
 
 	if opts.Install {
@@ -100,7 +98,8 @@ func main() {
 			fmt.Println("Can't update and install at the same time. Please update first.")
 			os.Exit(1)
 		}
-		_, err := os.Stat(appDir + "/aix.d/install")
+		cmd := appDir + "/aix.d/install"
+		_, err := os.Stat(cmd)
 		if errors.Is(err, os.ErrNotExist) {
 			fmt.Println("No install target executable (aix.d/install) found!")
 			os.Exit(1)
@@ -108,7 +107,14 @@ func main() {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		opts.Target = "aix.d/install"
+		out, err := exec.Command(cmd).Output()
+		if err != nil {
+			fmt.Printf("Install run failed: %s\n", out)
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		fmt.Printf("Install run complete: %s\n", out)
+		return
 	}
 
 	if opts.Update {
@@ -131,9 +137,9 @@ func main() {
 		updated, err := doUpdate(opts.UpdateFile, opts.UpdateURL, opts.UseZSync)
 		if err != nil {
 			fmt.Println("Error during update: ", err)
-			if !opts.AutoUpdate {
+			// if !opts.AutoUpdate {
 				os.Exit(1)
-			}
+			// }
 		}
 
 		if updated {
@@ -144,16 +150,18 @@ func main() {
 			// Prep to run the post-update script
 			os.Setenv("AIX_POST_UPDATE", "1")
 
-			// Exec the newly updated AppImage
-			cmd := shellescape.QuoteCommand(append([]string{opts.UpdateFile}, args...))
-			newArgs := []string{"bash", "-c", cmd}
-			panic(syscall.Exec(appDir + "/bin/bash", newArgs, filterEnv(os.Environ())))
+			out, err := exec.Command(opts.UpdateFile).Output()
+			fmt.Println(out)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 
 		} else if err == nil {
 			fmt.Println("No update needed.")
-			if !opts.AutoUpdate {
+			// if !opts.AutoUpdate {
 				return
-			}
+			// }
 		}
 	}
 
@@ -176,46 +184,6 @@ func main() {
 	// We are completely replacing ourselves with the new app
 	// This should never return, so we panic if it does
 	panic(syscall.Exec(opts.Target, newArgs, env))
-}
-
-func filterEnv(curEnv []string) (strippedEnv []string) {
-	workingEnv := make(map[string]string)
-	for _, env := range curEnv {
-		split := strings.Split(env, "=")
-		var key, val string
-		key = split[0]
-		if len(split) > 1 {
-			val = split[1]
-		}
-
-		if strings.Contains(key, "APPRUN_ORIGINAL_") {
-			key = strings.TrimPrefix(key, "APPRUN_ORIGINAL_")
-			workingEnv[key] = val
-			continue
-		}
-
-		if  strings.Contains(key, "APPRUN") || 
-			strings.Contains(key, "APPIMAGE") || 
-			strings.Contains(key, "APPDIR") || 
-			strings.Contains(key, "LD_PRELOAD") ||
-			strings.Contains(key, "LD_PRELOAD") ||
-			strings.Contains(val, "/tmp/.mount_") {
-				continue
-		}
-
-		if _, ok := workingEnv[key]; ok {
-			continue
-		}
-
-		workingEnv[key] = val
-		
-	}
-
-	for key, val := range workingEnv {
-		strippedEnv = append(strippedEnv, key + "=" + val)
-		fmt.Println(key + "=" + val)
-	}
-	return
 }
 
 func GetSHA1(filePath string) (string, error) {
