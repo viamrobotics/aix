@@ -78,7 +78,7 @@ func main() {
 		cmd := appDir + "/aix.d/postupdate"
 		_, err := os.Stat(cmd)
 		if errors.Is(err, os.ErrNotExist) {
-			fmt.Println("No postupdate needed")
+			fmt.Println("No post-update needed")
 			return
 		} else if err != nil {
 			fmt.Println(err)
@@ -86,11 +86,11 @@ func main() {
 		}
 		out, err := exec.Command(cmd).CombinedOutput()
 		if err != nil {
-			fmt.Printf("Postupdate run failed: %s\n", out)
+			fmt.Printf("Post-update run failed: %s\n", out)
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		fmt.Printf("Postupdate run complete: %s\n", out)
+		fmt.Printf("Post-update run complete: %s\n", out)
 		os.Unsetenv("AIX_POST_UPDATE")
 		return
 	}
@@ -136,12 +136,12 @@ func main() {
 
 		fmt.Println("UpdateURL: ", opts.UpdateURL)
 		fmt.Println("UpdateFile: ", opts.UpdateFile)
-		updated, err := doUpdate(opts.UpdateFile, opts.UpdateURL, opts.UseZSync)
-		if err != nil {
-			fmt.Println("Error during update: ", err)
-			os.Exit(1)
-		}
-
+		// updated, err := doUpdate(opts.UpdateFile, opts.UpdateURL, opts.UseZSync)
+		// if err != nil {
+		// 	fmt.Println("Error during update: ", err)
+		// 	os.Exit(1)
+		// }
+		updated := true
 		if updated {
 			fmt.Println("Successfully updated.")
 			// Clean environment
@@ -151,8 +151,8 @@ func main() {
 			os.Setenv("AIX_POST_UPDATE", "1")
 
 			//cmd := shellescape.QuoteCommand(opts.UpdateFile)
-			out, err := exec.Command("bash", "-c", "/usr/local/bin/cubeeyegrpcserver").CombinedOutput()
-			fmt.Println(out)
+			out, err := exec.Command(appDir + "/aix.d/restart-self", opts.UpdateFile).CombinedOutput()
+			fmt.Println("Running post-update: %s\n", out)
 			if err != nil {
 				fmt.Println(err)
 				//os.Exit(1)
