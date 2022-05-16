@@ -24,7 +24,7 @@ import (
 	"github.com/Otterverse/libzsync-go"
 	"github.com/jessevdk/go-flags"
 	"github.com/schollz/progressbar/v3"
-	// "github.com/alessio/shellescape"
+	//"github.com/alessio/shellescape"
 )
 
 func main() {
@@ -150,10 +150,11 @@ func main() {
 			// Prep to run the post-update script
 			os.Setenv("AIX_POST_UPDATE", "1")
 
-			out, err := exec.Command(opts.UpdateFile).Output()
-			fmt.Println(out)
+			//cmd := shellescape.QuoteCommand(opts.UpdateFile)
+			out, err := exec.Command("bash", "-c", opts.UpdateFile).Output()
+			fmt.Println("SMURF1: ", out)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println("SMURF2: ", err)
 				os.Exit(1)
 			}
 
