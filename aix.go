@@ -29,6 +29,13 @@ func main() {
 	// Set automatically inside AppImage runtimes
 	appDir := os.Getenv("APPDIR")
 
+	// Required for AppRun v2.0+
+	err := os.Chdir(os.Getenv("APPRUN_RUNTIME"))
+	if err != nil {
+		fmt.Println("Can't switch AppImage runtime, further errors may be encountered.")
+		fmt.Println(err)
+	}
+
 	var opts struct {
 		Update     bool   `long:"aix-update" description:"Update and exit"`
 		AutoUpdate bool   `long:"aix-auto-update" description:"Update and run main app from new version" env:"AIX_AUTO_UPDATE"`
