@@ -5,7 +5,7 @@ In other words, AIX is an AppImage update tool combined with a target-payload se
 
 ## tl;dr
 ```
-go install github.com/Otterverse/aix@latest
+go install github.com/viamrobotics/aix@latest
 cp `go env GOPATH`/bin/aix "$APPDIR/usr/bin/"
 ```
 Set your AppImage environment to run the aix binary as the target and make sure your AppImage sets the environment variable "AIX_TARGET" to the (relative) path of the default target (original payload.)

@@ -20,7 +20,7 @@ import (
 
 	"golang.org/x/sys/unix"
 
-	"github.com/Otterverse/libzsync-go"
+	"github.com/viamrobotics/libzsync-go"
 	"github.com/jessevdk/go-flags"
 	"github.com/schollz/progressbar/v3"
 )

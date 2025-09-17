@@ -1,11 +1,11 @@
-module github.com/Otterverse/aix
+module github.com/viamrobotics/aix
 
 go 1.17
 
 require (
-	github.com/Otterverse/libzsync-go v0.1.7
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/schollz/progressbar/v3 v3.8.6
+	github.com/viamrobotics/libzsync-go v0.1.8
 	golang.org/x/sys v0.0.0-20220513210249-45d2b4557a2a
 )
 
