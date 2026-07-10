@@ -1,12 +1,12 @@
 module github.com/viamrobotics/aix
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/schollz/progressbar/v3 v3.8.6
 	github.com/viamrobotics/libzsync-go v0.1.8
-	golang.org/x/sys v0.38.0
+	golang.org/x/sys v0.45.0
 )
 
 require (
@@ -14,6 +14,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
-	golang.org/x/crypto v0.45.0 // indirect
-	golang.org/x/term v0.37.0 // indirect
+	golang.org/x/crypto v0.52.0 // indirect
+	golang.org/x/term v0.43.0 // indirect
 )
